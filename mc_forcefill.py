@@ -59,7 +59,8 @@ NON_STACKABLE_KEYWORDS = [
     'music_disc', 'potion', 'splash_potion',
     'lingering_potion', 'enchanted_book',
     'writable_book', 'written_book',
-    'suspicious_stew', 'totem_of_undying'
+    'suspicious_stew', 'totem_of_undying', 'spyglass',
+    'water_bucket', 'lava_bucket'
 ]
 
 

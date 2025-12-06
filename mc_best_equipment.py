@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-best_equipment.py – Give player full enchanted golden armor + diamond tools
+mc_best_equipment.py – Give player full enchanted golden armor + diamond tools
 with max enchantments, plus useful items (cooked beef, torches, spyglass).
 
 Usage:
-    python best_equipment.py level.dat                    # singleplayer
-    python best_equipment.py playerdata/<uuid>.dat        # multiplayer
+    python mc_best_equipment.py level.dat                    # singleplayer
+    python mc_best_equipment.py playerdata/<uuid>.dat        # multiplayer
 """
 
 import sys
@@ -26,10 +26,10 @@ def create_golden_helmet():
         'count': Byte(1),
         'components': Compound({
             'minecraft:enchantments': Compound({
-                'minecraft:protection': Int(4),
-                'minecraft:respiration': Int(3),
+                'minecraft:protection': Int(5),
+                'minecraft:respiration': Int(5),
                 'minecraft:aqua_affinity': Int(1),
-                'minecraft:unbreaking': Int(3),
+                'minecraft:unbreaking': Int(5),
                 'minecraft:mending': Int(1)
             })
         })
@@ -43,10 +43,10 @@ def create_golden_chestplate():
         'count': Byte(1),
         'components': Compound({
             'minecraft:enchantments': Compound({
-                'minecraft:protection': Int(4),
-                'minecraft:unbreaking': Int(3),
+                'minecraft:protection': Int(5),
+                'minecraft:unbreaking': Int(5),
                 'minecraft:mending': Int(1),
-                'minecraft:thorns': Int(3)
+                'minecraft:thorns': Int(5)
             })
         })
     })
@@ -59,10 +59,10 @@ def create_golden_leggings():
         'count': Byte(1),
         'components': Compound({
             'minecraft:enchantments': Compound({
-                'minecraft:protection': Int(4),
-                'minecraft:unbreaking': Int(3),
+                'minecraft:protection': Int(5),
+                'minecraft:unbreaking': Int(5),
                 'minecraft:mending': Int(1),
-                'minecraft:thorns': Int(3)
+                'minecraft:thorns': Int(5)
             })
         })
     })
@@ -75,12 +75,12 @@ def create_golden_boots():
         'count': Byte(1),
         'components': Compound({
             'minecraft:enchantments': Compound({
-                'minecraft:protection': Int(4),
-                'minecraft:feather_falling': Int(4),
-                'minecraft:depth_strider': Int(3),
-                'minecraft:unbreaking': Int(3),
+                'minecraft:protection': Int(5),
+                'minecraft:feather_falling': Int(5),
+                'minecraft:depth_strider': Int(5),
+                'minecraft:unbreaking': Int(5),
                 'minecraft:mending': Int(1),
-                'minecraft:soul_speed': Int(3)
+                'minecraft:soul_speed': Int(5)
             })
         })
     })
@@ -99,7 +99,8 @@ def create_diamond_sword():
                 'minecraft:unbreaking': Int(5),
                 'minecraft:mending': Int(1),
                 'minecraft:fire_aspect': Int(5),
-                'minecraft:smite	': Int(5)
+                'minecraft:smite	': Int(5),
+                'minecraft:fortune	': Int(5)
             })
         })
     })
@@ -113,9 +114,10 @@ def create_diamond_pickaxe():
         'components': Compound({
             'minecraft:enchantments': Compound({
                 'minecraft:efficiency': Int(5),
-                'minecraft:fortune': Int(3),
-                'minecraft:unbreaking': Int(3),
-                'minecraft:mending': Int(1)
+                'minecraft:fortune': Int(5),
+                'minecraft:unbreaking': Int(5),
+                'minecraft:mending': Int(1),
+                'minecraft:fortune	': Int(5)
             })
         })
     })
@@ -130,8 +132,8 @@ def create_diamond_axe():
             'minecraft:enchantments': Compound({
                 'minecraft:efficiency': Int(5),
                 'minecraft:sharpness': Int(5),
-                'minecraft:unbreaking': Int(3),
-                'minecraft:silk_touch': Int(1)
+                'minecraft:unbreaking': Int(5),
+                'minecraft:fortune	': Int(5)
             })
         })
     })
@@ -145,8 +147,9 @@ def create_diamond_shovel():
         'components': Compound({
             'minecraft:enchantments': Compound({
                 'minecraft:efficiency': Int(5),
-                'minecraft:unbreaking': Int(3),
-                'minecraft:mending': Int(1)
+                'minecraft:unbreaking': Int(5),
+                'minecraft:mending': Int(1),
+                'minecraft:fortune	': Int(5)
             })
         })
     })
@@ -160,8 +163,9 @@ def create_diamond_hoe():
         'components': Compound({
             'minecraft:enchantments': Compound({
                 'minecraft:efficiency': Int(5),
-                'minecraft:unbreaking': Int(3),
-                'minecraft:mending': Int(1)
+                'minecraft:unbreaking': Int(5),
+                'minecraft:mending': Int(1),
+                'minecraft:fortune	': Int(5)
             })
         })
     })

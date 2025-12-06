@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-forcefill.py – Force every minecraft inventory slot to 64 (or 16) items,
+mc_forcefill.py – Force every minecraft inventory slot to 64 (or 16) items,
 Works with both level.dat (singleplayer) and player.dat (multiplayer).
 
 Usage:
-    python forcefill.py level.dat                  # singleplayer
-    python forcefill.py playerdata/<uuid>.dat      # multiplayer
+    python mc_forcefill.py level.dat                  # singleplayer
+    python mc_forcefill.py playerdata/<uuid>.dat      # multiplayer
 """
 
 import sys

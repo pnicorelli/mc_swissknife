@@ -66,7 +66,7 @@ cd Documents
 git clone https://github.com/pnicorelli/mc_swissknife.git
 
 # Enter the project folder
-cd minecraft-inventory-manager
+cd mc_swissknife
 ```
 
 **What does this do?** `git clone` downloads the entire project to your computer!

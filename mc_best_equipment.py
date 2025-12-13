@@ -11,6 +11,7 @@ Usage:
 import sys
 import shutil
 from pathlib import Path
+from utils.NBTFile import NBTFile
 try:
     import nbtlib
     from nbtlib.tag import Compound, List, String, Byte, Short, Int
@@ -237,52 +238,20 @@ def setup_best_equipment(player_data):
 
 
 def process_file(filepath):
-    """Process either level.dat (singleplayer) or player.dat (multiplayer)"""
     filepath = Path(filepath)
-    
-    if not filepath.exists():
-        print(f"Error: File '{filepath}' not found")
-        return False
-    
-    # Create backup
-    backup_path = filepath.with_suffix(filepath.suffix + '.backup')
-    print(f"Creating backup: {backup_path}")
-    shutil.copy2(filepath, backup_path)
-    
-    try:
-        # Load NBT data
-        print(f"Loading {filepath}...")
-        nbt_file = nbtlib.load(filepath)
+    nbt = NBTFile(filepath)
+    player_data = nbt.openfile()
+    modified_count = setup_best_equipment(player_data)
         
-        # Check if this is level.dat or player.dat
-        if 'Data' in nbt_file and 'Player' in nbt_file['Data']:
-            print("Detected: level.dat (singleplayer world)")
-            player_data = nbt_file['Data']['Player']
-        elif 'Inventory' in nbt_file or not ('Data' in nbt_file):
-            print("Detected: player.dat (multiplayer)")
-            player_data = nbt_file
-        else:
-            print("Error: Could not find player data in file")
-            return False
-        
-        # Setup equipment
-        items_added = setup_best_equipment(player_data)
-        
-        # Save modified NBT
+    # Save modified NBT
+    if modified_count > 0:
         print(f"\nSaving changes to {filepath}...")
-        nbt_file.save(filepath)
-        print(f"✓ Successfully added {items_added} items!")
-        print("\n🎮 Load your world to see the changes!")
-        
-        return True
-        
-    except Exception as e:
-        print(f"Error processing file: {e}")
-        print(f"Restoring backup...")
-        shutil.copy2(backup_path, filepath)
-        import traceback
-        traceback.print_exc()
-        return False
+        nbt.savefile(player_data)
+        print(f"✓ Successfully modified {modified_count} slot(s)")
+    else:
+        print("\n✓ No changes needed - all slots already at max stack size")
+    
+    return True
 
 
 def main():

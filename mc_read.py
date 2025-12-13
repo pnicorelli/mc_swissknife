@@ -1,23 +1,18 @@
 import nbtlib
 import argparse
 import os
+from pathlib import Path
+from utils.NBTFile import NBTFile
 # Import specific NBT tags for clarity, though not strictly required for this logic
 from nbtlib.tag import Compound, List, Int, Byte, String 
 
 def read_player_inventory(file_path):
     """Reads the player data file and prints the inventory contents."""
-    
-    # 1. Check if the file exists
-    if not os.path.exists(file_path):
-        print(f"❌ ERROR: The player data file was not found: {file_path}")
-        return
-
-    print(f"📖 Reading player data file: {file_path}")
+    filepath = Path(file_path)
+    nbt = NBTFile(filepath)
+    player_data = nbt.openfile()
     
     try:
-        # Load the NBT file (player data is usually uncompressed)
-        nbt_file = nbtlib.load(file_path)
-        player_data = nbt_file['Data']['Player']
         # Access the Inventory list. It should be a List[Compound]
         inventory = player_data.get('Inventory')
         

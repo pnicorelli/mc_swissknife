@@ -11,6 +11,7 @@ Usage:
 import sys
 import shutil
 from pathlib import Path
+from utils.NBTFile import NBTFile
 try:
     import nbtlib
 except ImportError:
@@ -122,53 +123,21 @@ def process_player_data(player_data):
 
 
 def forcefill_file(filepath):
-    """Process either level.dat (singleplayer) or player.dat (multiplayer)"""
     filepath = Path(filepath)
+    nbt = NBTFile(filepath)
+    player_data = nbt.openfile()
+    modified_count = process_player_data(player_data)
+        
+    # Save modified NBT
+    if modified_count > 0:
+        print(f"\nSaving changes to {filepath}...")
+        nbt.savefile(player_data)
+        print(f"✓ Successfully modified {modified_count} slot(s)")
+    else:
+        print("\n✓ No changes needed - all slots already at max stack size")
     
-    if not filepath.exists():
-        print(f"Error: File '{filepath}' not found")
-        return False
-    
-    # Create backup
-    backup_path = filepath.with_suffix(filepath.suffix + '.backup')
-    print(f"Creating backup: {backup_path}")
-    shutil.copy2(filepath, backup_path)
-    
-    try:
-        # Load NBT data
-        print(f"Loading {filepath}...")
-        nbt_file = nbtlib.load(filepath)
-        
-        # Check if this is level.dat (has Data.Player) or player.dat (direct player data)
-        if 'Data' in nbt_file and 'Player' in nbt_file['Data']:
-            print("Detected: level.dat (singleplayer world)")
-            player_data = nbt_file['Data']['Player']
-        elif 'Inventory' in nbt_file or 'EnderItems' in nbt_file:
-            print("Detected: player.dat (multiplayer)")
-            player_data = nbt_file
-        else:
-            print("Error: Could not find player data in file")
-            print("Make sure you're using level.dat (singleplayer) or playerdata/<uuid>.dat (multiplayer)")
-            return False
-        
-        # Process the player data
-        modified_count = process_player_data(player_data)
-        
-        # Save modified NBT
-        if modified_count > 0:
-            print(f"\nSaving changes to {filepath}...")
-            nbt_file.save(filepath)
-            print(f"✓ Successfully modified {modified_count} slot(s)")
-        else:
-            print("\n✓ No changes needed - all slots already at max stack size")
-        
-        return True
-        
-    except Exception as e:
-        print(f"Error processing file: {e}")
-        print(f"Restoring backup...")
-        shutil.copy2(backup_path, filepath)
-        return False
+    return True
+
 
 
 def main():

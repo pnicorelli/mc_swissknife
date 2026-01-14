@@ -2,229 +2,206 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import os
 from pathlib import Path
+
+# Importing your custom logic
 from mc_read import read_player_inventory
 from mc_forcefill import forcefill_file
 
-class MinecraftSaveManagerGUI:
+class MinecraftSwissKnife:
     def __init__(self, root):
         self.root = root
         self.root.title("Minecraft Swiss Knife")
-        self.root.geometry("800x600")
+        self.root.geometry("1000x700")
         
-        # Top frame for path and refresh
-        self.top_frame = tk.Frame(root, padx=10, pady=10)
-        self.top_frame.pack(side=tk.TOP, fill=tk.X)
-        
-        # Path label and entry
-        tk.Label(self.top_frame, text="Save Path:").pack(side=tk.LEFT, padx=(0, 5))
-        
-        self.path_var = tk.StringVar(value="~/.minecraft/saves/")
-        self.path_entry = tk.Entry(self.top_frame, textvariable=self.path_var, width=50)
-        self.path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-        
-        # Refresh button
-        self.refresh_btn = tk.Button(self.top_frame, text="Refresh", command=self.refresh)
-        self.refresh_btn.pack(side=tk.LEFT)
-        
-        # Notebook (tabs) for save directories
-        self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
-        # Bottom frame for buttons
-        self.bottom_frame = tk.Frame(root, padx=10, pady=10)
-        self.bottom_frame.pack(side=tk.BOTTOM, fill=tk.X)
-        
-        # Action buttons
-        self.empty_btn = tk.Button(self.bottom_frame, text="Empty", 
-                                   command=self.on_empty, width=15)
-        self.empty_btn.pack(side=tk.LEFT, padx=5)
-        
-        self.fill_btn = tk.Button(self.bottom_frame, text="Fill", 
-                                  command=self.on_fill, width=15)
-        self.fill_btn.pack(side=tk.LEFT, padx=5)
-        
-        self.special_btn = tk.Button(self.bottom_frame, text="Special", 
-                                     command=self.on_special, width=15)
-        self.special_btn.pack(side=tk.LEFT, padx=5)
-        
-        # Store tabs and their listboxes
-        self.tabs = {}
-        
-        # Initial load
-        self.refresh()
-    
-    def refresh(self):
-        """Refresh the save directories and update tabs"""
-        # Clear existing tabs
-        for tab in self.notebook.tabs():
-            self.notebook.forget(tab)
-        self.tabs.clear()
-        
-        # Get the path
-        path = os.path.expanduser(self.path_var.get())
-        
-        # Check if path exists
-        if not os.path.exists(path):
-            messagebox.showerror("Error", f"Path does not exist: {path}")
-            return
-        
-        # Get all directories in the save path
-        try:
-            dirs = [d for d in os.listdir(path) 
-                   if os.path.isdir(os.path.join(path, d))]
-            dirs.sort()
-            
-            if not dirs:
-                messagebox.showinfo("Info", "No save directories found")
-                return
-            
-            # Create a tab for each directory
-            for dir_name in dirs:
-                self.create_tab(dir_name, os.path.join(path, dir_name))
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to read directories: {str(e)}")
-    
-    def create_tab(self, name, full_path):
-        """Create a tab for a save directory"""
-        # Create frame for this tab
-        frame = tk.Frame(self.notebook)
-        self.notebook.add(frame, text=name)
-        
-        # Create listbox with scrollbar
-        scrollbar = tk.Scrollbar(frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, 
-                            font=("Courier", 10))
-        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=listbox.yview)
-        
-        # Store the tab info
-        self.tabs[name] = {
-            'frame': frame,
-            'listbox': listbox,
-            'path': full_path
-        }
-        
-        # Load inventory for this save
-        self.load_inventory(name)
-    
-    def load_inventory(self, save_name):
-        """Load inventory items into the listbox"""
-        listbox = self.tabs[save_name]['listbox']
-        save_path = self.tabs[save_name]['path']
-        
-        # Clear existing items
-        listbox.delete(0, tk.END)
-        
-        try:
-            # Call your existing function to get inventory
-            # Replace this with your actual function call
-            inventory_items = self.get_inventory(save_path)
-            
-            # Add items to listbox
-            for item in inventory_items:
-                listbox.insert(tk.END, item)
-                
-        except Exception as e:
-            listbox.insert(tk.END, f"Error loading inventory: {str(e)}")
-    
-    def get_inventory(self, save_path):
-        """
-        Get inventory from the player data file
-        """
-        # Look for level.dat in the save directory
-        player_file = os.path.join(save_path, "level.dat")
-        
-        if not os.path.exists(player_file):
-            return [f"Error: level.dat not found in {save_path}"]
-        
-        try:
-            # Call your existing function
-            items_by_slot = read_player_inventory(player_file)
-            
-            if not items_by_slot:
-                return ["No items in inventory"]
-            
-            # Format the items for display
-            result = []
-            for slot in sorted(items_by_slot.keys()):
-                item = items_by_slot[slot]
-                
-                # Categorize the slot
-                if 0 <= slot <= 8:
-                    area = "Hotbar"
-                    index = slot
-                elif 9 <= slot <= 35:
-                    area = "Main"
-                    index = slot - 9
-                elif slot == -106:
-                    area = "Offhand"
-                    index = "-"
-                elif -103 <= slot <= -100:
-                    area = "Armor"
-                    index = str(-100 - slot).replace('0', 'H').replace('1', 'C').replace('2', 'L').replace('3', 'B')
-                else:
-                    area = "Other"
-                    index = slot
-                
-                result.append(f"[Slot {slot:03d} | {area: <8} {index:>2}]: {item['count']:02d}x {item['id']}")
-            
-            return result
-            
-        except Exception as e:
-            return [f"Error reading inventory: {str(e)}"]
-    
-    def get_current_tab(self):
-        """Get the currently selected tab"""
-        try:
-            current_tab_id = self.notebook.select()
-            current_tab_text = self.notebook.tab(current_tab_id, "text")
-            return current_tab_text
-        except:
-            return None
-    
-    def on_empty(self):
-        """Handle Empty button click"""
-        current_tab = self.get_current_tab()
-        if current_tab:
-            save_path = self.tabs[current_tab]['path']
-            # Call your existing empty function
-            # empty_inventory(save_path)
-            messagebox.showinfo("Empty", f"Empty function called for: {current_tab}\nNOT IMPLEMENTED")
-            self.load_inventory(current_tab)  # Refresh the display
-        else:
-            messagebox.showwarning("Warning", "No save selected")
-    
-    def on_fill(self):
-        """Handle Fill button click"""
-        current_tab = self.get_current_tab()
-        if current_tab:
-            save_path = self.tabs[current_tab]['path']
-            player_file = os.path.join(save_path, "level.dat")
-            forcefill_file(player_file)
-            # messagebox.showinfo("Fill", f"Fill function called for: {current_tab}")
-            self.load_inventory(current_tab)  # Refresh the display
-        else:
-            messagebox.showwarning("Warning", "No save selected")
-    
-    def on_special(self):
-        """Handle Special button click"""
-        current_tab = self.get_current_tab()
-        if current_tab:
-            save_path = self.tabs[current_tab]['path']
-            # Call your existing special function
-            # special_action(save_path)
-            messagebox.showinfo("Special", f"Special function called for: {current_tab}")
-            self.load_inventory(current_tab)  # Refresh the display
-        else:
-            messagebox.showwarning("Warning", "No save selected")
+        # Internal data storage
+        self.worlds_data = {}  # Map: display_name -> full_path
+        self.current_save_path = None
 
-def main():
-    root = tk.Tk()
-    app = MinecraftSaveManagerGUI(root)
-    root.mainloop()
+        self.setup_styles()
+        self.create_top_panel()
+        
+        # Main Container (Sidebar + Content Area)
+        self.main_container = tk.Frame(self.root)
+        self.main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        self.create_sidebar()
+        self.create_content_area()
+
+        # Initial world scan
+        self.refresh_worlds()
+
+    def setup_styles(self):
+        """Configure UI styles for a modern look"""
+        style = ttk.Style()
+        style.configure("TNotebook", padding=2)
+        style.configure("Sidebar.TFrame", background="#f0f0f0")
+
+    def create_top_panel(self):
+        """Top area for Path configuration and Connection Type"""
+        top_frame = tk.LabelFrame(self.root, text=" Configuration ", padx=10, pady=10)
+        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+        # Minecraft Path Entry
+        tk.Label(top_frame, text="Minecraft Path:").grid(row=0, column=0, sticky="w")
+        default_path = os.path.expanduser("~/.minecraft/saves/")
+        self.path_var = tk.StringVar(value=default_path)
+        self.path_entry = tk.Entry(top_frame, textvariable=self.path_var, width=50)
+        self.path_entry.grid(row=0, column=1, padx=10, sticky="ew")
+
+        # Game Mode Selection (Local vs Multiplayer)
+        tk.Label(top_frame, text="Mode:").grid(row=0, column=2, padx=(10, 5))
+        self.mode_var = tk.StringVar(value="Local")
+        self.mode_select = ttk.Combobox(top_frame, textvariable=self.mode_var, 
+                                        values=["Local (Saves)", "Multiplayer (Server)"], 
+                                        state="readonly", width=18)
+        self.mode_select.grid(row=0, column=3, padx=5)
+
+        # Refresh Button
+        self.refresh_btn = tk.Button(top_frame, text="Scan Worlds", 
+                                     command=self.refresh_worlds, bg="#e1e1e1")
+        self.refresh_btn.grid(row=0, column=4, padx=10)
+        
+        top_frame.columnconfigure(1, weight=1)
+
+    def create_sidebar(self):
+        """Left sidebar displaying the list of detected worlds"""
+        sidebar = tk.Frame(self.main_container, width=250, relief=tk.RIDGE, borderwidth=1)
+        sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        
+        tk.Label(sidebar, text="World List", font=('Arial', 10, 'bold')).pack(pady=5)
+        
+        # Listbox with Scrollbar for world selection
+        self.world_listbox = tk.Listbox(sidebar, font=("Segoe UI", 10), borderwidth=0)
+        self.world_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.world_listbox.bind('<<ListboxSelect>>', self.on_world_select)
+        
+        sb = tk.Scrollbar(sidebar, orient=tk.VERTICAL, command=self.world_listbox.yview)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.world_listbox.config(yscrollcommand=sb.set)
+
+    def create_content_area(self):
+        """Right area featuring tabs for Inventory and Attributes"""
+        self.content_frame = tk.Frame(self.main_container)
+        self.content_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        self.notebook = ttk.Notebook(self.content_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # TAB 1: INVENTORY
+        self.tab_inv = tk.Frame(self.notebook, bg="white")
+        self.notebook.add(self.tab_inv, text=" Inventory Management ")
+        self.setup_inventory_tab()
+
+        # TAB 2: ATTRIBUTES
+        self.tab_attr = tk.Frame(self.notebook, bg="white")
+        self.notebook.add(self.tab_attr, text=" Player Attributes ")
+        self.setup_attributes_tab()
+
+    def setup_inventory_tab(self):
+        """Internal layout for the Inventory Tab"""
+        self.inv_listbox = tk.Listbox(self.tab_inv, font=("Courier", 10), borderwidth=0)
+        self.inv_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Action Buttons
+        btn_frame = tk.Frame(self.tab_inv, bg="white")
+        btn_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
+        
+        tk.Button(btn_frame, text="Empty Inventory", width=15, command=self.on_empty).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Force Fill", width=15, command=self.on_fill).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Special Action", width=15, command=self.on_special).pack(side=tk.LEFT, padx=10)
+
+    def setup_attributes_tab(self):
+        """Internal layout for the Attributes Tab"""
+        container = tk.Frame(self.tab_attr, bg="white", padx=20, pady=20)
+        container.pack(fill=tk.BOTH, expand=True)
+
+        # Attribute Input Fields
+        self.attr_entries = {}
+        fields = [("Health", "20"), ("Food Level", "20"), ("XP Level", "0"), ("Saturation", "5.0")]
+
+        for i, (label_text, default_val) in enumerate(fields):
+            tk.Label(container, text=f"{label_text}:", bg="white").grid(row=i, column=0, sticky="w", pady=8)
+            entry = tk.Entry(container, width=25)
+            entry.insert(0, default_val)
+            entry.grid(row=i, column=1, padx=10, pady=8)
+            self.attr_entries[label_text] = entry
+
+        # Save Button for Attributes
+        save_attr_btn = tk.Button(container, text="Save Attributes", bg="#2ecc71", fg="white", 
+                                  font=('Arial', 10, 'bold'), command=self.on_save_attributes, padx=20)
+        save_attr_btn.grid(row=len(fields), column=1, pady=30, sticky="e")
+
+    # --- LOGIC METHODS ---
+
+    def refresh_worlds(self):
+        """Scans the directory for Minecraft saves"""
+        path = os.path.expanduser(self.path_var.get())
+        if not os.path.exists(path):
+            messagebox.showerror("Error", f"Path not found: {path}")
+            return
+
+        self.world_listbox.delete(0, tk.END)
+        self.worlds_data.clear()
+
+        try:
+            dirs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+            for d in sorted(dirs):
+                self.world_listbox.insert(tk.END, d)
+                self.worlds_data[d] = os.path.join(path, d)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to list worlds: {e}")
+
+    def on_world_select(self, event):
+        """Triggered when a world is clicked in the sidebar"""
+        selection = self.world_listbox.curselection()
+        if selection:
+            world_name = self.world_listbox.get(selection[0])
+            self.current_save_path = self.worlds_data[world_name]
+            self.update_ui_for_world(world_name)
+
+    def update_ui_for_world(self, world_name):
+        """Update inventory and attributes when a world is selected"""
+        self.inv_listbox.delete(0, tk.END)
+        player_file = os.path.join(self.current_save_path, "level.dat")
+        
+        # Logic from your original script
+        try:
+            inventory = read_player_inventory(player_file)
+            if inventory:
+                for slot, data in sorted(inventory.items()):
+                    self.inv_listbox.insert(tk.END, f"[Slot {slot:03d}] {data['count']}x {data['id']}")
+            else:
+                self.inv_listbox.insert(tk.END, "Inventory is empty.")
+        except Exception as e:
+            self.inv_listbox.insert(tk.END, f"Error reading data: {e}")
+
+    def on_save_attributes(self):
+        """Logic to save modified player attributes"""
+        if not self.current_save_path:
+            messagebox.showwarning("Warning", "Please select a world first!")
+            return
+        # Placeholder for NBT writing logic
+        messagebox.showinfo("Actin", "Attributes saved to level.dat not implemented")
+
+    def on_empty(self):
+        """Action for Empty button"""
+        if self.current_save_path:
+            messagebox.showinfo("Action", "Emptying inventory...")
+            self.update_ui_for_world("") # Refresh
+
+    def on_fill(self):
+        """Action for Fill button using forcefill_file logic"""
+        if self.current_save_path:
+            player_file = os.path.join(self.current_save_path, "level.dat")
+            forcefill_file(player_file)
+            self.update_ui_for_world("") # Refresh
+
+    def on_special(self):
+        """Action for Special button"""
+        if self.current_save_path:
+            messagebox.showinfo("Action", "Special routine triggered")
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = MinecraftSwissKnife(root)
+    root.mainloop()

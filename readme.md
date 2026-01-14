@@ -264,7 +264,8 @@ Here's what you can try:
 ### Hard Tasks:
 1. Add a search box to filter inventory items
 2. Add the ability to add/remove specific items
-3. Create a backup before making changes
+3. Add the ability to add/remove player attributes
+4. Create a backup before making changes
 
 ## 📖 Useful Resources
 

@@ -2,7 +2,7 @@ import nbtlib
 import argparse
 from pathlib import Path
 from utils.NBTFile import NBTFile
-from nbtlib.tag import List
+from nbtlib.tag import Compound, List, String, Int, Double, Float
 
 def read_player_inventory(player_data):
     """Opens the NBT file and returns a dictionary of inventory items."""
@@ -30,8 +30,9 @@ def read_player_attributes(player_data):
     """Opens the NBT file and returns a dictionary of formatted attributes."""
     try:
         attributes_list = player_data.get('attributes') or player_data.get('Attributes')
-
+        xp = player_data.get('XpLevel')
         attr_dict = {}
+        attr_dict['XpLevel'] = int(xp)
         for attr in attributes_list:
             try:
                 # Map internal IDs to UI labels
@@ -46,6 +47,52 @@ def read_player_attributes(player_data):
         print(f"❌ Error reading attributes: {e}")
         return {}
 
+def write_player_attributes(player_data, field_name, val_array):
+    """
+    Writes attributes to player_data NBT structure using nbtlib types.
+    """
+    try:
+        # Case 1: Plain scalar field (e.g., 'XpLevel', 'Health')
+        if field_name.lower() not in ('attributes'):
+            value = val_array[0] if isinstance(val_array, (list, tuple)) else val_array
+            
+            # Cast to nbtlib types based on Python type
+            if isinstance(value, int):
+                player_data[field_name] = Int(value)
+            elif isinstance(value, float):
+                player_data[field_name] = Float(value)
+            else:
+                player_data[field_name] = String(str(value))
+            return True
+
+        # Case 2: Attributes list
+        if not isinstance(val_array, dict):
+            raise ValueError("Attributes must be provided as a list of dicts")
+
+        # Minecraft attributes typically use 'Name' and 'Base' or 'id' and 'base' 
+        # depending on the game version. Using 'id' and 'base' as per your logic.
+        attr_list = []
+        for attr_dict in val_array:
+            
+            # Minecraft Attributes usually expect Doubles for the 'base' value
+            base_val = val_array[attr_dict]
+            nbt_val = Double(base_val)
+            # print(base_val, nbt_val)
+            attr_list.append(Compound({
+                'id': String(attr_dict),
+                'base': nbt_val
+            }))
+
+        # In nbtlib, we must wrap the list in a List tag specifying the type
+        player_data[field_name] = List[Compound](attr_list)
+        print(f"✓ Successfully wrote {len(attr_list)} attributes to {field_name}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error writing attributes: {e}")
+        return False
+
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Reads Minecraft player data (.dat) files.",

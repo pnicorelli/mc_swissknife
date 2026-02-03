@@ -5,8 +5,9 @@ from pathlib import Path
 from utils.NBTFile import NBTFile
 
 # Importing updated logic
-from mc_read import read_player_inventory, read_player_attributes
+from mc_player import read_player_inventory, read_player_attributes, write_player_attributes
 from mc_forcefill import forcefill_file
+from mc_datapacks import MC_DATAPACKS
 
 class MinecraftSwissKnife:
     def __init__(self, root):
@@ -67,11 +68,34 @@ class MinecraftSwissKnife:
         # Tabs
         self.tab_inv = tk.Frame(self.notebook, bg="white")
         self.tab_attr = tk.Frame(self.notebook, bg="white")
+        self.tab_datapacks = tk.Frame(self.notebook, bg="white")
         self.notebook.add(self.tab_inv, text=" Inventory ")
         self.notebook.add(self.tab_attr, text=" Attributes ")
+        self.notebook.add(self.tab_datapacks, text=" Datapacks ")
         
         self.setup_inventory_tab()
         self.setup_attributes_tab()
+        self.setup_datapacks_tab()
+
+    def setup_datapacks_tab(self):
+        self.datapack_tree = ttk.Treeview(
+            self.tab_datapacks,
+            columns=("installed",),
+            show="tree headings",
+            selectmode="none",
+            height=8
+        )
+
+        self.datapack_tree.heading("#0", text="Datapack")
+        self.datapack_tree.heading("installed", text="Installed")
+
+        self.datapack_tree.column("#0", width=200, anchor="w")
+        self.datapack_tree.column("installed", width=80, anchor="center")
+
+        self.datapack_tree.pack(fill="both", expand=True)
+
+        self.datapack_tree.bind("<Button-1>", self.on_datapack_click)
+
 
     def setup_inventory_tab(self):
         self.inv_listbox = tk.Listbox(self.tab_inv, font=("Courier", 10))
@@ -169,6 +193,22 @@ class MinecraftSwissKnife:
             else:
                 tk.Label(self.attr_dynamic_frame, text="No attributes found.", bg="white").pack()
 
+            # 3. Update Datapacks
+            for item in self.datapack_tree.get_children():
+                self.datapack_tree.delete(item)
+
+            status = MC_DATAPACKS.checkStatus(self.current_save_path)
+
+            for idx, dp in enumerate(status):
+                checkbox = "☑" if dp["installed"] else "☐"
+
+                self.datapack_tree.insert(
+                    "",
+                    "end",
+                    iid=str(idx),
+                    text=dp["label"],
+                    values=(checkbox,)
+                )
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load world data: {e}")
 
@@ -180,8 +220,51 @@ class MinecraftSwissKnife:
 
     def on_save_attributes(self):
         if not self.current_save_path: return
-        messagebox.showinfo("Note", "NBT Writing logic needs to be implemented in a separate function.")
 
+
+        cleaned_data = {}
+        for attr_name, entry in self.attr_entries.items():
+            cleaned_data[attr_name] = entry.get().strip()
+        minecraft_attributes = {k: v for k, v in cleaned_data.items() if k.startswith("minecraft:")}
+        try:
+            filepath = os.path.join(self.current_save_path, "level.dat")
+            nbt = NBTFile(filepath)
+            player_data = nbt.openfile()        
+            write_player_attributes(player_data, "XpLevel", int(cleaned_data["XpLevel"]))
+            write_player_attributes(player_data, "attributes", minecraft_attributes)
+            nbt.savefile(player_data)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load world data: {e}")
+
+        # print(minecraft_attributes)
+        # messagebox.showinfo("Note", "NBT Writing logic needs to be implemented in a separate function.")
+
+    def on_datapack_click(self, event):
+        region = self.datapack_tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+
+        column = self.datapack_tree.identify_column(event.x)
+        if column != "#1":
+            return
+
+        item = self.datapack_tree.identify_row(event.y)
+        if not item:
+            return
+
+        index = int(item)
+        current = self.datapack_tree.set(item, "installed")
+
+        try:
+            if current == "☐":
+                MC_DATAPACKS.add(self.current_save_path, index)
+                self.datapack_tree.set(item, "installed", "☑")
+            else:
+                MC_DATAPACKS.delete(self.current_save_path, index)
+                self.datapack_tree.set(item, "installed", "☐")
+
+        except Exception as e:
+            tk.messagebox.showerror("Datapack error", str(e))
 if __name__ == "__main__":
     root = tk.Tk()
     app = MinecraftSwissKnife(root)

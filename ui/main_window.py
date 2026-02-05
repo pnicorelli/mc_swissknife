@@ -67,7 +67,6 @@ class MainWindow:
             try:
                 # Load world data
                 world_data = self.world_manager.load_world_data(world_path)
-                
                 # Update all tabs
                 self.content_area.update_inventory(world_data['inventory'])
                 self.content_area.update_attributes(world_data['attributes'])

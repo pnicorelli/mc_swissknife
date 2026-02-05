@@ -54,6 +54,11 @@ class NBTFile:
             print("Detected: player.dat (multiplayer)")
             self.player_data = self.nbt_file
             self.is_level_dat = False
+            
+        elif 'Data' in self.nbt_file:
+            print("Detected: level.dat (new version)")
+            self.player_data = self.nbt_file
+            self.is_level_dat = False
 
         else:
             raise ValueError(
